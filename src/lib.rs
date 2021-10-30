@@ -3,12 +3,13 @@ use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use std::collections::HashMap;
 
 pub fn fyrstikk_tal_kombinasjonar(fyrstikker: usize) -> BigUint {
-    let mut kombinasjonar = HashMap::new();
     let mut greiner = HashMap::new();
 
-    if kan_skrive_null(fyrstikker) {
-        kombinasjonar.insert(6usize, 1.to_biguint().unwrap());
-    }
+    let mut kombinasjonar = if kan_skrive_null(fyrstikker) {
+        1.to_biguint().unwrap()
+    } else {
+        0.to_biguint().unwrap()
+    };
 
     for (treng, nye_gongar) in [
         (2, 1.to_biguint().unwrap()),
@@ -23,10 +24,8 @@ pub fn fyrstikk_tal_kombinasjonar(fyrstikker: usize) -> BigUint {
                 .entry(treng)
                 .and_modify(|gongar| *gongar += nye_gongar.clone())
                 .or_insert_with(|| nye_gongar.clone());
-            kombinasjonar
-                .entry(treng)
-                .and_modify(|gongar| *gongar += nye_gongar.clone())
-                .or_insert(nye_gongar);
+
+            kombinasjonar += nye_gongar;
         }
     }
 
@@ -60,16 +59,14 @@ pub fn fyrstikk_tal_kombinasjonar(fyrstikker: usize) -> BigUint {
                     .entry(treng)
                     .and_modify(|gongar| *gongar += nye_gongar.clone())
                     .or_insert_with(|| nye_gongar.clone());
-                kombinasjonar
-                    .entry(treng)
-                    .and_modify(|gongar| *gongar += nye_gongar.clone())
-                    .or_insert(nye_gongar);
+
+                kombinasjonar += nye_gongar;
                 stopp = false;
             }
         }
 
         if stopp {
-            return kombinasjonar.values().sum();
+            return kombinasjonar;
         }
 
         greiner = nye_greiner;
