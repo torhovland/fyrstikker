@@ -74,44 +74,6 @@ fn kan_skrive_null(fyrstikker: usize) -> bool {
     fyrstikker >= 6
 }
 
-// fn treng_fyrstikker(tal: usize) -> usize {
-//     digits(tal)
-//         .map(|i| match i {
-//             0 => 6,
-//             1 => 2,
-//             2 => 5,
-//             3 => 5,
-//             4 => 4,
-//             5 => 5,
-//             6 => 6,
-//             7 => 3,
-//             8 => 7,
-//             9 => 6,
-//             _ => {
-//                 panic!("Unexpected digit.");
-//             }
-//         })
-//         .sum()
-// }
-
-// fn digits(mut num: usize) -> impl Iterator<Item = usize> {
-//     let mut divisor = 1;
-//     while num >= divisor * 10 {
-//         divisor *= 10;
-//     }
-
-//     std::iter::from_fn(move || {
-//         if divisor == 0 {
-//             None
-//         } else {
-//             let v = num / divisor;
-//             num %= divisor;
-//             divisor /= 10;
-//             Some(v)
-//         }
-//     })
-// }
-
 use rstest::rstest;
 
 #[rstest]
