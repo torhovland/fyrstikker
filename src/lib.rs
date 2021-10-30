@@ -16,7 +16,7 @@ pub fn fyrstikk_tal_kombinasjonar(fyrstikker: usize) -> BigUint {
         (3, 1.to_biguint().unwrap()),
         (4, 1.to_biguint().unwrap()),
         (5, 3.to_biguint().unwrap()),
-        (6, 2.to_biguint().unwrap()),
+        (6, 2.to_biguint().unwrap()), // Don't include 0 as the leading number. Zero itself is counted above.
         (7, 1.to_biguint().unwrap()),
     ] {
         if treng <= fyrstikker {
@@ -43,13 +43,10 @@ pub fn fyrstikk_tal_kombinasjonar(fyrstikker: usize) -> BigUint {
         ]
         .into_par_iter()
         .map(|(nye_treng, nye_gongar)| {
-            let nye_greiner_for_siffer: HashMap<_, _> = greiner
+            greiner
                 .iter()
-                .map(|(treng, gongar)| (treng + nye_treng, gongar * nye_gongar.clone()))
+                .map(move |(treng, gongar)| (treng + nye_treng, gongar * nye_gongar.clone()))
                 .filter(|(treng, _)| treng <= &fyrstikker)
-                .collect();
-
-            nye_greiner_for_siffer
         })
         .collect();
 
