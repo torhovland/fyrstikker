@@ -5,11 +5,9 @@ use std::collections::HashMap;
 pub fn fyrstikk_tal_kombinasjonar(fyrstikker: usize) -> BigUint {
     let mut greiner = HashMap::new();
 
-    let mut kombinasjonar = if kan_skrive_null(fyrstikker) {
-        1.to_biguint().unwrap()
-    } else {
-        0.to_biguint().unwrap()
-    };
+    let mut kombinasjonar = if kan_skrive_null(fyrstikker) { 1 } else { 0 }
+        .to_biguint()
+        .unwrap();
 
     for (treng, nye_gongar) in [
         (2, 1.to_biguint().unwrap()),
