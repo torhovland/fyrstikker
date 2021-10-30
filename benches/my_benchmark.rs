@@ -6,8 +6,12 @@ fn criterion_benchmark(c: &mut Criterion) {
 
     group.sampling_mode(SamplingMode::Flat).sample_size(10);
 
-    group.bench_function("fyrstikker 33", |b| {
-        b.iter(|| fyrstikk_tal_kombinasjonar(33))
+    group.bench_function("fyrstikker 40", |b| {
+        b.iter(|| fyrstikk_tal_kombinasjonar(40))
+    });
+
+    group.bench_function("fyrstikker 2000", |b| {
+        b.iter(|| fyrstikk_tal_kombinasjonar(2000))
     });
 
     group.finish();
