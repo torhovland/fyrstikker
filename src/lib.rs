@@ -49,7 +49,7 @@ pub fn fyrstikk_tal_kombinasjonar(fyrstikker: usize) -> BigUint {
         .collect();
 
         for nye_greiner_for_siffer in nye_greiner_for_sifre {
-            for (treng, nye_gongar) in nye_greiner_for_siffer {
+            nye_greiner_for_siffer.for_each(|(treng, nye_gongar)| {
                 nye_greiner
                     .entry(treng)
                     .and_modify(|gongar| *gongar += nye_gongar.clone())
@@ -57,7 +57,7 @@ pub fn fyrstikk_tal_kombinasjonar(fyrstikker: usize) -> BigUint {
 
                 kombinasjonar += nye_gongar;
                 stopp = false;
-            }
+            });
         }
 
         if stopp {
