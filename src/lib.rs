@@ -1,17 +1,17 @@
 use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
-use std::collections::HashMap;
 
 pub fn fyrstikk_tal_kombinasjonar(fyrstikker: usize) -> usize {
-    let mut kombinasjonar = HashMap::new();
+    let mut kombinasjonar = 0usize;
     let mut greiner = vec![];
+
+    if kan_skrive_null(fyrstikker) { kombinasjonar += 1 }
 
     for siffer in 1..10 {
         let treng = treng_fyrstikker(siffer);
 
         if treng <= fyrstikker {
             greiner.push(treng);
-            let tal = kombinasjonar.entry(treng).or_insert(0usize);
-            *tal += 1;
+            kombinasjonar += 1;
         }
     }
 
@@ -41,14 +41,10 @@ pub fn fyrstikk_tal_kombinasjonar(fyrstikker: usize) -> usize {
             }
         }
 
-        nye_greiner.iter().for_each(|fyrstikker| {
-            let tal = kombinasjonar.entry(*fyrstikker).or_insert(0usize);
-            *tal += 1;
-        });
+        kombinasjonar += nye_greiner.len();
 
         if stopp {
-            return kombinasjonar.values().sum::<usize>()
-                + if kan_skrive_null(fyrstikker) { 1 } else { 0 };
+            return kombinasjonar;
         }
 
         greiner = nye_greiner;
