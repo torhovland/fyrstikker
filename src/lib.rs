@@ -102,6 +102,7 @@ use rstest::rstest;
 #[case(3, 2.to_biguint().unwrap())]
 #[case(4, 4.to_biguint().unwrap())]
 #[case(8, 47.to_biguint().unwrap())]
+#[case(100, BigUint::parse_bytes(b"155609448901280828126891", 10).unwrap())]
 fn fyrstikk_tal_kombinasjonar_test(#[case] input: usize, #[case] expected: BigUint) {
     println!(
         "Med {} fyrstikker forventar vi {} kombinasjonar.",
