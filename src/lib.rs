@@ -45,13 +45,13 @@ pub fn fyrstikk_tal_kombinasjonar(fyrstikker: usize) -> BigUint {
                     let t = treng + nye_treng;
                     let g = gongar * nye_gongar;
 
+                    kombinasjonar += &g;
+                    stopp = false;
+
                     nye_greiner
                         .entry(t)
-                        .and_modify(|gongar| *gongar += g.clone())
-                        .or_insert_with(|| g.to_biguint().unwrap());
-
-                    kombinasjonar += g;
-                    stopp = false;
+                        .and_modify(|gongar| *gongar += &g)
+                        .or_insert(g);
                 });
         }
 
