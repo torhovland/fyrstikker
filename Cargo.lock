@@ -202,7 +202,6 @@ dependencies = [
  "dashmap",
  "mimalloc",
  "num-bigint",
- "num-traits",
  "rayon",
  "rstest",
 ]

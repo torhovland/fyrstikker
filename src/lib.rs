@@ -1,85 +1,57 @@
 use dashmap::DashMap;
 use num_bigint::{BigUint, ToBigUint};
-use num_traits::{One, Zero};
 
-pub fn fyrstikk_tal_kombinasjonar(fyrstikker: usize) -> BigUint {
+pub fn fyrstikk_tal_kombinasjonar(mut fyrstikker: usize) -> BigUint {
+    let mut kombinasjonar = 0.to_biguint().unwrap();
+    let rainbow_tabellar = lag_rainbow_tabellar(fyrstikker);
+    let mut tabell_storleik = største_tabell(fyrstikker);
+    let mut rainbow_tabell = hent_tabell(&rainbow_tabellar, tabell_storleik);
+
     let mut greiner = DashMap::new();
+    greiner.insert(0, 1.to_biguint().unwrap());
 
-    // Tell opp 0 separat, sidan det er det einaste talet som får lov til å starte med 0.
-    let mut kombinasjonar = if kan_skrive_null(fyrstikker) {
-        One::one()
-    } else {
-        Zero::zero()
-    };
-
-    // Finn alle siffer vi kan starte med. Dette blir dei initielle greinene.
-    kombinasjonar += [
-        (2, 1usize), // Det er 1 siffer som treng to fyrstikker.
-        (4, 1usize),
-        (5, 3usize), // Det er 3 siffer som treng fem fyrstikker.
-        (3, 1usize),
-        (6, 2usize), // Ikkje ta med 0 som fyrste siffer. Vi har allereie handtert talet 0 over.
-        (7, 1usize),
-    ]
-    .into_iter()
-    .filter(|(treng, _)| treng <= &fyrstikker)
-    .map(|(treng, nye_gongar)| {
-        greiner
-            .entry(treng)
-            .and_modify(|gongar| *gongar += nye_gongar)
-            .or_insert_with(|| nye_gongar.to_biguint().unwrap());
-
-        nye_gongar
-    })
-    .sum::<BigUint>();
-
-    // Finn fleire siffer så langt det går.
     loop {
-        // For kvar grein (førre siffer), får vi eit sett av nye greiner med siffer som vi har plass til. Men i staden
-        // for ei eksponensiell vekst av greiner, lagar vi heller ein delt hashmap der for eksempel desse hamnar under
-        // same nøkkel:
-
-        // 41 treng 6 fyrstikker  -> map[6] = 1 tal
-        // 111 treng 6 fyrstikker -> map[6] = 1 tal
-        // I nye_greiner blir det -> map[6] = 2 tal
-
         let nye_greiner = DashMap::new();
+        //nye_greiner.insert(0, 1.to_biguint().unwrap());
 
         let nye_kombinasjonar: BigUint = greiner
             .par_iter()
             .map(|grein| {
-                [
-                    (2, 1usize),
-                    (3, 1usize),
-                    (4, 1usize),
-                    (5, 3usize),
-                    (6, 3usize),
-                    (7, 1usize),
-                ]
-                .iter()
-                .filter(|(treng, _)| grein.key() + treng <= fyrstikker)
-                .map(|(treng, gongar)| {
-                    // Om vi veit at vi har 10 kombinasjonar som treng 20 fyrstikker, så blir det 10 * 3 kombinasjonar
-                    // som treng 25 fyrstikker, fordi for kvar kombinasjon kan vi legge til 2, 3 eller 5.
+                rainbow_tabell
+                    .iter()
+                    .filter(|innslag| grein.key() + innslag.key() <= fyrstikker)
+                    .map(|innslag| {
+                        // Om vi veit at vi har 10 kombinasjonar som treng 20 fyrstikker, så blir det 10 * 3 kombinasjonar
+                        // som treng 25 fyrstikker, fordi for kvar kombinasjon kan vi legge til 2, 3 eller 5.
 
-                    let nye_treng = grein.key() + treng;
-                    let nye_gongar = grein.value() * gongar;
+                        let nye_treng = grein.key() + innslag.key();
+                        let nye_gongar: BigUint = grein.value() * innslag.value();
 
-                    nye_greiner
-                        .entry(nye_treng)
-                        .and_modify(|gongar| *gongar += &nye_gongar)
-                        .or_insert(nye_gongar.clone());
+                        nye_greiner
+                            .entry(nye_treng)
+                            .and_modify(|gongar| *gongar += &nye_gongar)
+                            .or_insert(nye_gongar.clone());
 
-                    nye_gongar
-                })
-                .sum::<BigUint>()
+                        nye_gongar
+                    })
+                    //.filter(|_| *grein.key() > 0usize)
+                    .sum::<BigUint>()
             })
-            .sum();
+            .sum::<BigUint>();
 
-        if nye_kombinasjonar > Zero::zero() {
+        println!(
+            "Iterasjon med tabellstorleik på {} fann {} kombinasjonar.",
+            tabell_storleik, nye_kombinasjonar
+        );
+
+        if nye_kombinasjonar > 0.to_biguint().unwrap() {
             kombinasjonar += nye_kombinasjonar;
-        } else {
+        } else if tabell_storleik == 1 {
             return kombinasjonar;
+        } else {
+            // På tide å finne ein tabell med færre siffer
+            tabell_storleik /= 2;
+            rainbow_tabell = hent_tabell(&rainbow_tabellar, tabell_storleik);
         }
 
         // Vi treng ikkje dei gamle greinene lenger. No skal vi jobbe vidare med dei nye, og forsøke å legge på eit nytt
@@ -88,8 +60,84 @@ pub fn fyrstikk_tal_kombinasjonar(fyrstikker: usize) -> BigUint {
     }
 }
 
-fn kan_skrive_null(fyrstikker: usize) -> bool {
-    fyrstikker >= 6
+fn lag_rainbow_tabellar(fyrstikker: usize) -> DashMap<usize, DashMap<usize, BigUint>> {
+    let rainbow_tabell = DashMap::new();
+    let ny_rainbow = DashMap::new();
+
+    let mut siffer = 1;
+
+    [
+        (2, 1usize),
+        (3, 1usize),
+        (4, 1usize),
+        (5, 3usize),
+        (6, 3usize),
+        (7, 1usize),
+    ]
+    .into_iter()
+    .for_each(|(treng, nye_gongar)| {
+        ny_rainbow
+            .entry(treng)
+            .and_modify(|gongar| *gongar += nye_gongar)
+            .or_insert_with(|| nye_gongar.to_biguint().unwrap());
+    });
+
+    rainbow_tabell.insert(siffer, ny_rainbow.clone());
+    let mut siste_rainbow = ny_rainbow;
+
+    loop {
+        let ny_rainbow = DashMap::new();
+        siffer *= 2;
+
+        if siffer > største_tabell(fyrstikker) {
+            return rainbow_tabell;
+        }
+
+        siste_rainbow.iter().for_each(|grein| {
+            siste_rainbow.iter().for_each(|grein2| {
+                // Om vi veit at vi har 10 kombinasjonar som treng 20 fyrstikker, så blir det 10 * 3 kombinasjonar
+                // som treng 25 fyrstikker, fordi for kvar kombinasjon kan vi legge til 2, 3 eller 5.
+
+                let nye_treng = grein.key() + grein2.key();
+                let nye_gongar = grein.value() * grein2.value();
+
+                ny_rainbow
+                    .entry(nye_treng)
+                    .and_modify(|gongar| *gongar += &nye_gongar)
+                    .or_insert(nye_gongar.clone());
+            });
+        });
+
+        rainbow_tabell.insert(siffer, ny_rainbow.clone());
+        siste_rainbow = ny_rainbow;
+    }
+}
+
+fn største_tabell(fyrstikker: usize) -> usize {
+    let mut siffer = 1;
+
+    loop {
+        let neste = siffer * 2;
+        if neste * 2 > fyrstikker {
+            return siffer;
+        } else {
+            siffer = neste;
+        }
+    }
+}
+
+fn hent_tabell(
+    rainbow_tabellar: &DashMap<usize, DashMap<usize, BigUint>>,
+    siffer: usize,
+) -> DashMap<usize, BigUint> {
+    let tabell = rainbow_tabellar.get(&siffer).unwrap().clone();
+    println!(
+        "Hentar tabell for {} siffer. Den har {} innslag: {:?}",
+        siffer,
+        tabell.len(),
+        tabell
+    );
+    tabell
 }
 
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
