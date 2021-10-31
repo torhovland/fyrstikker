@@ -1,9 +1,13 @@
-use dashmap::DashMap;
 use num_bigint::{BigUint, ToBigUint};
 use num_traits::{One, Zero};
+use parking_lot::RwLock;
+use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
+use rstest::rstest;
+use std::sync::Arc;
 
 pub fn fyrstikk_tal_kombinasjonar(fyrstikker: usize) -> BigUint {
-    let mut greiner = DashMap::new();
+    // La vektor vere 1-basert, så vi ikkje treng å legge til og trekke frå 1 i koden lenger ned.
+    let mut greiner = Arc::new(RwLock::new(vec![0.to_biguint().unwrap(); fyrstikker + 1]));
 
     // Tell opp 0 separat, sidan det er det einaste talet som får lov til å starte med 0.
     let mut kombinasjonar = if kan_skrive_null(fyrstikker) {
@@ -24,11 +28,7 @@ pub fn fyrstikk_tal_kombinasjonar(fyrstikker: usize) -> BigUint {
     .into_iter()
     .filter(|(treng, _)| treng <= &fyrstikker)
     .map(|(treng, nye_gongar)| {
-        greiner
-            .entry(treng)
-            .and_modify(|gongar| *gongar += nye_gongar)
-            .or_insert_with(|| nye_gongar.to_biguint().unwrap());
-
+        greiner.write()[treng] += nye_gongar;
         nye_gongar
     })
     .sum::<BigUint>();
@@ -42,12 +42,16 @@ pub fn fyrstikk_tal_kombinasjonar(fyrstikker: usize) -> BigUint {
         // 41 treng 6 fyrstikker  -> map[6] = 1 tal
         // 111 treng 6 fyrstikker -> map[6] = 1 tal
         // I nye_greiner blir det -> map[6] = 2 tal
-
-        let nye_greiner = DashMap::new();
+        let nye_greiner = Arc::new(RwLock::new(vec![0.to_biguint().unwrap(); fyrstikker + 1]));
 
         let nye_kombinasjonar: BigUint = greiner
+            .clone()
+            .read()
             .par_iter()
-            .map(|grein| {
+            .enumerate()
+            .map(|(grein_treng, grein_gongar)| {
+                let nye_greiner = Arc::clone(&nye_greiner);
+
                 [
                     (2, 1usize),
                     (3, 1usize),
@@ -57,19 +61,15 @@ pub fn fyrstikk_tal_kombinasjonar(fyrstikker: usize) -> BigUint {
                     (7, 1usize),
                 ]
                 .iter()
-                .filter(|(treng, _)| grein.key() + treng <= fyrstikker)
+                .filter(|(treng, _)| grein_treng + treng <= fyrstikker)
                 .map(|(treng, gongar)| {
                     // Om vi veit at vi har 10 kombinasjonar som treng 20 fyrstikker, så blir det 10 * 3 kombinasjonar
                     // som treng 25 fyrstikker, fordi for kvar kombinasjon kan vi legge til 2, 3 eller 5.
 
-                    let nye_treng = grein.key() + treng;
-                    let nye_gongar = grein.value() * gongar;
+                    let nye_treng = grein_treng + treng;
+                    let nye_gongar = grein_gongar * gongar;
 
-                    nye_greiner
-                        .entry(nye_treng)
-                        .and_modify(|gongar| *gongar += &nye_gongar)
-                        .or_insert(nye_gongar.clone());
-
+                    nye_greiner.write()[nye_treng] += &nye_gongar;
                     nye_gongar
                 })
                 .sum::<BigUint>()
@@ -91,9 +91,6 @@ pub fn fyrstikk_tal_kombinasjonar(fyrstikker: usize) -> BigUint {
 fn kan_skrive_null(fyrstikker: usize) -> bool {
     fyrstikker >= 6
 }
-
-use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
-use rstest::rstest;
 
 #[rstest]
 #[case(0, 0.to_biguint().unwrap())]
