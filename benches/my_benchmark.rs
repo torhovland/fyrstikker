@@ -1,6 +1,9 @@
 use criterion::{criterion_group, criterion_main, Criterion, SamplingMode};
 use fyrstikker::fyrstikk_tal_kombinasjonar;
 
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 fn criterion_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("fyrstikker");
 

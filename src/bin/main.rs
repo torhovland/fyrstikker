@@ -1,5 +1,8 @@
 use fyrstikker::fyrstikk_tal_kombinasjonar;
 
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 fn main() {
     let arg = std::env::args()
         .nth(1)
