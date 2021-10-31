@@ -1,5 +1,4 @@
 use num_bigint::{BigUint, ToBigUint};
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use std::collections::HashMap;
 
 pub fn fyrstikk_tal_kombinasjonar(fyrstikker: usize) -> BigUint {
@@ -31,33 +30,29 @@ pub fn fyrstikk_tal_kombinasjonar(fyrstikker: usize) -> BigUint {
         let mut nye_greiner = HashMap::new();
         let mut stopp = true;
 
-        let nye_greiner_for_sifre: Vec<_> = [
+        for (nye_treng, nye_gongar) in [
             (2, 1.to_biguint().unwrap()),
             (3, 1.to_biguint().unwrap()),
             (4, 1.to_biguint().unwrap()),
             (5, 3.to_biguint().unwrap()),
             (6, 3.to_biguint().unwrap()),
             (7, 1.to_biguint().unwrap()),
-        ]
-        .into_par_iter()
-        .map(|(nye_treng, nye_gongar)| {
+        ] {
             greiner
                 .iter()
-                .map(move |(treng, gongar)| (treng + nye_treng, gongar * nye_gongar.clone()))
-                .filter(|(treng, _)| treng <= &fyrstikker)
-        })
-        .collect();
+                .filter(|(treng, _)| *treng + nye_treng <= fyrstikker)
+                .for_each(|(treng, gongar)| {
+                    let t = treng + nye_treng;
+                    let g = gongar * nye_gongar.clone();
 
-        for nye_greiner_for_siffer in nye_greiner_for_sifre {
-            nye_greiner_for_siffer.for_each(|(treng, nye_gongar)| {
-                nye_greiner
-                    .entry(treng)
-                    .and_modify(|gongar| *gongar += nye_gongar.clone())
-                    .or_insert_with(|| nye_gongar.clone());
+                    nye_greiner
+                        .entry(t)
+                        .and_modify(|gongar| *gongar += g.clone())
+                        .or_insert_with(|| g.clone());
 
-                kombinasjonar += nye_gongar;
-                stopp = false;
-            });
+                    kombinasjonar += g;
+                    stopp = false;
+                });
         }
 
         if stopp {
