@@ -5,9 +5,11 @@ edition = "2021"
 
 [dependencies]
 num-bigint = "0.4.2"
-#rayon = "1.5.1"
+rayon = "1.5.1"
 rstest = "0.11.0"
 mimalloc = { version = "0.1.26", default-features = false }
+dashmap = { version = "4.0.2", features = ["rayon"] }
+num-traits = "0.2.14"
 
 [dev-dependencies]
 criterion = "0.3.5"
