@@ -9,18 +9,18 @@ pub fn fyrstikk_tal_kombinasjonar(fyrstikker: usize) -> BigUint {
         .unwrap();
 
     for (treng, nye_gongar) in [
-        (2, 1.to_biguint().unwrap()),
-        (3, 1.to_biguint().unwrap()),
-        (4, 1.to_biguint().unwrap()),
-        (5, 3.to_biguint().unwrap()),
-        (6, 2.to_biguint().unwrap()), // Don't include 0 as the leading number. Zero itself is counted above.
-        (7, 1.to_biguint().unwrap()),
+        (2, 1usize),
+        (4, 1usize),
+        (5, 3usize),
+        (3, 1usize),
+        (6, 2usize), // Don't include 0 as the leading number. Zero itself is counted above.
+        (7, 1usize),
     ] {
         if treng <= fyrstikker {
             greiner
                 .entry(treng)
-                .and_modify(|gongar| *gongar += nye_gongar.clone())
-                .or_insert_with(|| nye_gongar.clone());
+                .and_modify(|gongar| *gongar += nye_gongar)
+                .or_insert_with(|| nye_gongar.to_biguint().unwrap());
 
             kombinasjonar += nye_gongar;
         }
@@ -31,24 +31,24 @@ pub fn fyrstikk_tal_kombinasjonar(fyrstikker: usize) -> BigUint {
         let mut stopp = true;
 
         for (nye_treng, nye_gongar) in [
-            (2, 1.to_biguint().unwrap()),
-            (3, 1.to_biguint().unwrap()),
-            (4, 1.to_biguint().unwrap()),
-            (5, 3.to_biguint().unwrap()),
-            (6, 3.to_biguint().unwrap()),
-            (7, 1.to_biguint().unwrap()),
+            (2, 1usize),
+            (3, 1usize),
+            (4, 1usize),
+            (5, 3usize),
+            (6, 3usize),
+            (7, 1usize),
         ] {
             greiner
                 .iter()
                 .filter(|(treng, _)| *treng + nye_treng <= fyrstikker)
                 .for_each(|(treng, gongar)| {
                     let t = treng + nye_treng;
-                    let g = gongar * nye_gongar.clone();
+                    let g = gongar * nye_gongar;
 
                     nye_greiner
                         .entry(t)
                         .and_modify(|gongar| *gongar += g.clone())
-                        .or_insert_with(|| g.clone());
+                        .or_insert_with(|| g.to_biguint().unwrap());
 
                     kombinasjonar += g;
                     stopp = false;
