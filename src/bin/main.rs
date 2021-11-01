@@ -12,6 +12,6 @@ fn main() {
         .parse::<usize>()
         .expect("Du har ikkje oppgitt eit gyldig nummer.");
 
-    let tal = fyrstikk_tal_kombinasjonar(fyrstikker);
+    let (tal, _) = fyrstikk_tal_kombinasjonar(fyrstikker);
     println!("Med {} fyrstikker kan du lage {} tal.", fyrstikker, tal);
 }

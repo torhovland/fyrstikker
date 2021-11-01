@@ -1,37 +1,53 @@
 use dashmap::DashMap;
 use num_bigint::{BigUint, ToBigUint};
-use num_traits::{One, Zero};
 
-pub fn fyrstikk_tal_kombinasjonar(fyrstikker: usize) -> BigUint {
-    let mut greiner = DashMap::new();
+pub fn fyrstikk_tal_kombinasjonar(fyrstikker: usize) -> (BigUint, DashMap<usize, BigUint>) {
+    let tre;
+    let splitt = fyrstikker / 2;
+    let mut greiner;
+    let mut kombinasjonar;
 
-    // Tell opp 0 separat, sidan det er det einaste talet som får lov til å starte med 0.
-    let mut kombinasjonar = if kan_skrive_null(fyrstikker) {
-        One::one()
+    if splitt >= 7 {
+        let (splitta_kombinasjonar, splitta_tre) = fyrstikk_tal_kombinasjonar(splitt);
+        tre = kvadrer_tre(splitta_tre);
+        greiner = tre.clone();
+        kombinasjonar = splitta_kombinasjonar.pow(2);
     } else {
-        Zero::zero()
-    };
+        //Tell opp 0 separat, sidan det er det einaste talet som får lov til å starte med 0.
+        kombinasjonar = if kan_skrive_null(fyrstikker) {
+            1.to_biguint().unwrap()
+        } else {
+            0.to_biguint().unwrap()
+        };
 
-    // Finn alle siffer vi kan starte med. Dette blir dei initielle greinene.
-    kombinasjonar += [
-        (2, 1usize), // Det er 1 siffer som treng to fyrstikker.
-        (4, 1usize),
-        (5, 3usize), // Det er 3 siffer som treng fem fyrstikker.
-        (3, 1usize),
-        (6, 2usize), // Ikkje ta med 0 som fyrste siffer. Vi har allereie handtert talet 0 over.
-        (7, 1usize),
-    ]
-    .into_iter()
-    .filter(|(treng, _)| treng <= &fyrstikker)
-    .map(|(treng, nye_gongar)| {
-        greiner
-            .entry(treng)
-            .and_modify(|gongar| *gongar += nye_gongar)
-            .or_insert_with(|| nye_gongar.to_biguint().unwrap());
+        tre = DashMap::new();
+        greiner = DashMap::new();
 
-        nye_gongar
-    })
-    .sum::<BigUint>();
+        // Finn alle siffer vi kan starte med. Dette blir dei initielle greinene.
+        kombinasjonar += [
+            (2, 1usize), // Det er 1 siffer som treng to fyrstikker.
+            (4, 1usize),
+            (5, 3usize), // Det er 3 siffer som treng fem fyrstikker.
+            (3, 1usize),
+            (6, 2usize), // Ikkje ta med 0 som fyrste siffer. Vi har allereie handtert talet 0 over.
+            (7, 1usize),
+        ]
+        .into_iter()
+        .filter(|(treng, _)| treng <= &fyrstikker)
+        .map(|(treng, nye_gongar)| {
+            greiner
+                .entry(treng)
+                .and_modify(|gongar| *gongar += nye_gongar)
+                .or_insert_with(|| nye_gongar.to_biguint().unwrap());
+
+            tre.entry(treng)
+                .and_modify(|gongar| *gongar += nye_gongar)
+                .or_insert_with(|| nye_gongar.to_biguint().unwrap());
+
+            nye_gongar
+        })
+        .sum::<BigUint>();
+    }
 
     // Finn fleire siffer så langt det går.
     loop {
@@ -70,16 +86,20 @@ pub fn fyrstikk_tal_kombinasjonar(fyrstikker: usize) -> BigUint {
                         .and_modify(|gongar| *gongar += &nye_gongar)
                         .or_insert(nye_gongar.clone());
 
+                    tre.entry(nye_treng)
+                        .and_modify(|gongar| *gongar += &nye_gongar)
+                        .or_insert(nye_gongar.clone());
+
                     nye_gongar
                 })
                 .sum::<BigUint>()
             })
             .sum();
 
-        if nye_kombinasjonar > Zero::zero() {
+        if nye_kombinasjonar > 0.to_biguint().unwrap() {
             kombinasjonar += nye_kombinasjonar;
         } else {
-            return kombinasjonar;
+            return (kombinasjonar, tre);
         }
 
         // Vi treng ikkje dei gamle greinene lenger. No skal vi jobbe vidare med dei nye, og forsøke å legge på eit nytt
@@ -90,6 +110,24 @@ pub fn fyrstikk_tal_kombinasjonar(fyrstikker: usize) -> BigUint {
 
 fn kan_skrive_null(fyrstikker: usize) -> bool {
     fyrstikker >= 6
+}
+
+fn kvadrer_tre(greiner: DashMap<usize, BigUint>) -> DashMap<usize, BigUint> {
+    let nye_greiner = DashMap::new();
+
+    greiner.iter().for_each(|grein| {
+        greiner.iter().for_each(|grein2| {
+            let nye_treng = grein.key() + grein2.key();
+            let nye_gongar = grein.value() * grein2.value();
+
+            nye_greiner
+                .entry(nye_treng)
+                .and_modify(|gongar| *gongar += &nye_gongar)
+                .or_insert(nye_gongar.clone());
+        });
+    });
+
+    nye_greiner
 }
 
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
@@ -109,5 +147,6 @@ fn fyrstikk_tal_kombinasjonar_test(#[case] input: usize, #[case] expected: BigUi
         input, expected
     );
 
-    assert_eq!(expected, fyrstikk_tal_kombinasjonar(input))
+    let (kombinasjonar, _) = fyrstikk_tal_kombinasjonar(input);
+    assert_eq!(expected, kombinasjonar)
 }
